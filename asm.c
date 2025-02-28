@@ -392,10 +392,7 @@ void assembleStandard(const char *line, char *binStr) {
     }
     else if(!strcmp(e->format,"rd") && num>=2){
         rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-    }
-    else if(!strcmp(e->format,"")==0){
-        // e.g., return => no operand
-    }
+    } 
     else {
         strcpy(binStr,"ERROR");
         return;
@@ -407,9 +404,24 @@ void assembleStandard(const char *line, char *binStr) {
     strcpy(binStr,tmp);
 }
 
+static void assembleReturn(char *binStr)
+{
+    // Force the top nibble to be 0xd, i.e. shift by 28 bits (4-bit opcode style).
+    // This contradicts official Tinker doc, but matches the older/hypothetical encoding:
+    unsigned int inst = (0xd << 28);  // 0xd0000000 in hex
+
+    char tmp[33];
+    intToBinaryStr(inst, 32, tmp);
+    strcpy(binStr, tmp);
+}
+
 void assembleInstruction(const char *line, char *binStr) {
     char mnemonic[16] = {0};
     sscanf(line, "%15s", mnemonic);
+    if (!strcmp(mnemonic, "return")) {
+        assembleReturn(binStr);
+        return;
+    }
     if(!strcmp(mnemonic,"mov")){
         assembleMov(line, binStr);
     }
