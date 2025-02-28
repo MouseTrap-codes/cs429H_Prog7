@@ -10,7 +10,6 @@
     brgt r17, r12, r19
     priv r15, r14, r14, 4
     halt
-
     :FIB_COMPUTE
     mov r20, 0
     mov r21, 1
@@ -26,7 +25,6 @@
     brnz r25, r12
     priv r15, r21, r14, 4
     halt
-
     :EDGE_HANDLE
     mov r30, 1
     priv r15, r30, r14, 4
