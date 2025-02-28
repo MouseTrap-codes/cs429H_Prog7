@@ -16,7 +16,7 @@
 :loopInput
 	priv r6, r2, r6, 3
 	mov (r8)(0), r6
-	addi r8, r22
+	add r8, r8, r22
 	subi r5, 1
 	brnz r14, r5
 	clr r3
