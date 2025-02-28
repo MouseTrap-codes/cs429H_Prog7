@@ -7,26 +7,26 @@
 	brgt r3, r0, r1
 	halt
 	:continue
-	out r10, r1         
-	sub r0, r0, r2      
-	ld r4, :output_one 
-	brnz r4, r0        
+	out r10, r1
+	sub r0, r0, r2
+	ld r4, :output_one
+	brnz r4, r0
 	halt
 	:output_one
-	out r10, r2      
+	out r10, r2
 	sub r0, r0, r2
-	ld r5, :fib_loop  
-	brnz r5, r0         
+	ld r5, :fib_loop
+	brnz r5, r0
 	halt
 	:fib_loop
-	mov r6, r1         
-	mov r7, r2        
+	mov r6, r1
+	mov r7, r2
 	:loop
 	add r8, r6, r7
 	out r10, r8
 	sub r0, r0, r2
 	mov r6, r7
 	mov r7, r8
-	ld r9, :loop     
-	brnz 9, r0         
+	ld r9, :loop
+	brnz 9, r0
 	halt
