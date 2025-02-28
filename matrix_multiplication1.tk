@@ -42,8 +42,8 @@
 	add r25, r25, r24
 	mul r25, r25, r1
 	add r25, r25, r20
-	mul r26, r23, r6
-	add r26, r26, r24
+	mul r26, r24, r6
+	add r26, r26, r23
 	mul r26, r26, r1
 	add r26, r26, r21
 	mov r27, (r25)(0)
