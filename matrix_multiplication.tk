@@ -1,0 +1,68 @@
+.code
+	ld r40, 65536
+	ld r49, 65536
+	mov r11, 0
+	mov r20, 8
+	priv r8, r11, r8, 3
+	mov r60, r8
+	mov r61, r8
+	subi r61, 1
+	mul r24, r8, r8
+	mov r62, r24
+	mov r63, r24
+	ld r41, :mat1Load
+	ld r42, :mat2Load
+	ld r43, :computeInner
+	ld r44, :colLoop
+	ld r45, :rowLoop
+	ld r46, :exitInner
+	ld r47, :exitCol
+	ld r48, :finish
+	:mat1Load
+	priv r9, r11, r9, 3
+	mov (r40)(0), r9
+	add r40, r40, r20
+	subi r62, 1
+	brnz r41, r62
+	mov r50, r40
+	:mat2Load
+	priv r9, r11, r9, 3
+	mov (r49)(0), r9
+	add r49, r49, r20
+	subi r63, 1
+	brnz r42, r63
+	mov r56, r49
+	mov r30, 0
+	:rowLoop
+	mov r31, 0
+	:colLoop
+	mov r32, 0
+	clr r33
+	:computeInner
+	mul r34, r30, r60
+	add r34, r34, r32
+	mul r34, r34, r20
+	add r34, r34, r50
+	mul r36, r32, r60
+	add r36, r36, r31
+	mul r36, r36, r20
+	add r36, r36, r56
+	mov r35, (r34)(0)
+	mov r37, (r36)(0)
+	mulf r38, r35, r37
+	addf r33, r33, r38
+	addi r32, 1
+	brgt r46, r32, r61
+	br r43
+	:exitInner
+	ld r70, 1
+	priv r70, r33, r70, 4
+	addi r31, 1
+	brgt r47, r31, r61
+	br r44
+	:exitCol
+	addi r30, 1
+	brgt r48, r30, r61
+	br r45
+	:finish
+	halt
