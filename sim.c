@@ -593,33 +593,44 @@ int main(int argc, char *argv[]) {
         uint32_t instruction = *(uint32_t*)(cpu->memory + cpu->programCounter);
         instruction = le32toh(instruction);
         
-        // Decode fields based on the Tinker Instruction Manual:
+         // Decode fields based on the Tinker Instruction Manual:
         // Bits 31-27: opcode (5 bits)
         // Bits 26-22: rd (5 bits)
         // Bits 21-17: rs (5 bits)
         // Bits 16-12: rt (5 bits)
-        // Bits 11-0 : immediate L (12 bits)
+        // Bits 11-0 : immediate L (12 bits) for instructions that use it.
         uint8_t opcode = (instruction >> 27) & 0x1F;
+        //printf("opcode: 0x%x ", opcode);
         uint8_t rd     = (instruction >> 22) & 0x1F;
+        //printf("rd: %d ", rd);
         uint8_t rs     = (instruction >> 17) & 0x1F;
+        //printf("rs: %d ", rs);
         uint8_t rt     = (instruction >> 12) & 0x1F;
-        uint16_t imm   = instruction & 0xFFF;
+        //printf("rt: %d ", rt);
+        uint16_t imm = instruction & 0xFFF;
+        //printf("L: %d\n", imm);
         uint64_t L = 0;
         
         // For immediate instructions:
-        // For brr L (opcode 0xA) we sign-extend the immediate.
+        // For brr L (opcode 0xA) we sign-extend the immediate since it can be negative.
+        // For immediate instructions:
         if (opcode == 0xA || opcode == 0x10 || opcode == 0x13) {
+            // brr L needs sign extension
             int64_t signedImm = imm;
-            if (imm & 0x800)
+            if (imm & 0x800) // If bit 11 is set, sign-extend.
                 signedImm |= ~0xFFF;
-            L = (uint64_t)signedImm;
+            L = (uint64_t) signedImm;
+
         } else if (
+            // any opcode that uses bits [11:0] as an unsigned immediate
             opcode == 0x19 || // addi
             opcode == 0x1B || // subi
             opcode == 0x12 || // mov rd, L
             opcode == 0xF  || // priv rd, rs, rt, L
             opcode == 0x5  || // shftri
-            opcode == 0x7      // shftli
+            opcode == 0x7   // shftli
+            // opcode == 0x10 || // mov rd, (rs)(L)  <--- Add this
+            // opcode == 0x13    // mov (rd)(L), rs  <--- And this
         ) {
             L = imm;
         }
