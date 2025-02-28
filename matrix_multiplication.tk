@@ -1,42 +1,40 @@
 .code
 	ld r4, 65536
 	ld r5, 65536
-	mov r0, 0
 	mov r1, 8
+	mov r0, 0
 	priv r6, r0, r6, 3
-	mov r8, r6
 	mul r8, r6, r6
-	mov r9, r8
-	mov r7, r6
-	subi r7, 1
-	ld r10, :loadA
-	ld r11, :loadB
+	ld r10, :readA
+	ld r11, :readB
 	ld r12, :innerLoop
 	ld r13, :middleLoop
 	ld r14, :outerLoop
 	ld r15, :exitInner
 	ld r16, :exitMiddle
 	ld r17, :finish
-:loadA
+	mov r20, r4
+:readA
 	priv r2, r0, r2, 3
 	mov (r4)(0), r2
 	add r4, r4, r1
 	subi r8, 1
 	brnz r10, r8
-	mov r20, r4
-:loadB
+	mov r9, r6
+	mul r9, r9, r6
+	mov r21, r5
+:readB
 	priv r2, r0, r2, 3
 	mov (r5)(0), r2
 	add r5, r5, r1
 	subi r9, 1
 	brnz r11, r9
-	mov r21, r5
 	mov r22, 0
 :outerLoop
 	mov r23, 0
 :middleLoop
-	clr r30
-	mov r24, 0
+	clr  r30
+	mov  r24, 0
 :innerLoop
 	mul r25, r22, r6
 	add r25, r25, r24
@@ -51,17 +49,17 @@
 	mulf r29, r27, r28
 	addf r30, r30, r29
 	addi r24, 1
-	brgt r15, r24, r7
+	brgt r15, r24, r6
 	br r12
 :exitInner
 	ld r3, 1
 	priv r3, r30, r3, 4
 	addi r23, 1
-	brgt r16, r23, r7
+	brgt r16, r23, r6
 	br r13
 :exitMiddle
 	addi r22, 1
-	brgt r17, r22, r7
+	brgt r17, r22, r6
 	br r14
 :finish
 	halt
