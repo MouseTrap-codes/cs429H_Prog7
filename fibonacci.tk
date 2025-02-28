@@ -1,32 +1,30 @@
 .code
-	mov r1, 0
-	mov r2, 1
-	mov r10, 1
-	priv r0, r1, r0, 3
-	ld r3, :continue
-	brgt r3, r0, r1
-	halt
-	:continue
-	out r10, r1
-	sub r0, r0, r2
-	ld r4, :output_one
-	brnz r4, r0
-	halt
-	:output_one
-	out r10, r2
-	sub r0, r0, r2
-	ld r5, :fib_loop
-	brnz r5, r0
-	halt
-	:fib_loop
-	mov r6, r1
-	mov r7, r2
-	:loop
-	add r8, r6, r7
-	out r10, r8
-	sub r0, r0, r2
-	mov r6, r7
-	mov r7, r8
-	ld r9, :loop
-	brnz 9, r0
-	halt
+    mov r21, 0
+    mov r22, 1
+    mov r23, 1
+    priv r20, r21, r20, 3
+    ld r24, :seq_start
+    mov r25, 2
+    mov r26, 1
+    brgt r24, r20, r25
+    ld r27, :alt_case
+    brgt r27, r20, r26
+    out r23, r21
+    halt
+:seq_start
+    mov r28, 0
+    mov r29, 1
+    sub r20, r20, r26
+    sub r20, r20, r26
+    ld r30, :iter_loop
+:iter_loop
+    add r19, r28, r29
+    mov r28, r29
+    mov r29, r19
+    sub r20, r20, r26
+    brnz r30, r20
+    out r23, r29
+    halt
+:alt_case
+    out r23, r26
+    halt
