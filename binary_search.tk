@@ -1,82 +1,82 @@
 .code
-    ld r8, 65536
-    ld r12, 65536
-    mov r2, 0
-    mov r20, 2
-    mov r22, 8
-    priv r5, r2, r5, 3
-    mov r10, r5
-    subi r10, 1
-    ld r14, :loopInput
-    ld r16, :setLow
-    ld r18, :setHigh
-    ld r26, :searchLoop
-    ld r28, :noMatch
-    ld r30, :matchFound
-    :loopInput
-    priv r6, r2, r6, 3
-    mov (r8)(0), r6
-    addi r8, r22
-    subi r5, 1
-    brnz r14, r5
-    clr r3
-    priv r4, r2, r4, 3
-    :searchLoop
-    brgt r28, r3, r10
-    clr r7
-    sub r7, r10, r3
-    div r7, r7, r20
-    add r7, r7, r3
-    mov r24, r7
-    mul r7, r7, r22
-    add r7, r7, r12
-    mov r9, (r7)(0)
-    brgt r16, r4, r9
-    brgt r18, r9, r4
-    br r30
-    :setLow
-    ld r11, 1
-    add r3, r24, r11
-    br r26
-    :setHigh
-    ld r13, 1
-    sub r10, r24, r13
-    br r26
-    :noMatch
-    mov r15, 3
-    mov r17, 110
-    out r15, r17
-    mov r17, 111
-    out r15, r17
-    mov r17, 116
-    out r15, r17
-    mov r17, 32
-    out r15, r17
-    mov r17, 102
-    out r15, r17
-    mov r17, 111
-    out r15, r17
-    mov r17, 117
-    out r15, r17
-    mov r17, 110
-    out r15, r17
-    mov r17, 100
-    out r15, r17
-    mov r17, 10
-    out r15, r17
-    halt
-    :matchFound
-    mov r15, 3
-    mov r17, 102
-    out r15, r17
-    mov r17, 111
-    out r15, r17
-    mov r17, 117
-    out r15, r17
-    mov r17, 110
-    out r15, r17
-    mov r17, 100
-    out r15, r17
-    mov r17, 10
-    out r15, r17
-    halt
+	ld r8, 65536
+	ld r12, 65536
+	mov r2, 0
+	mov r20, 2
+	mov r22, 8
+	priv r5, r2, r5, 3
+	mov r10, r5
+	subi r10, 1
+	ld r14, :loopInput
+	ld r16, :setLow
+	ld r18, :setHigh
+	ld r26, :searchLoop
+	ld r28, :noMatch
+	ld r30, :matchFound
+	:loopInput
+	priv r6, r2, r6, 3
+	mov (r8)(0), r6
+	addi r8, r22
+	subi r5, 1
+	brnz r14, r5
+	clr r3
+	priv r4, r2, r4, 3
+	:searchLoop
+	brgt r28, r3, r10
+	clr r7
+	sub r7, r10, r3
+	div r7, r7, r20
+	add r7, r7, r3
+	mov r24, r7
+	mul r7, r7, r22
+	add r7, r7, r12
+	mov r9, (r7)(0)
+	brgt r16, r4, r9
+	brgt r18, r9, r4
+	br r30
+	:setLow
+	ld r11, 1
+	add r3, r24, r11
+	br r26
+	:setHigh
+	ld r13, 1
+	sub r10, r24, r13
+	br r26
+	:noMatch
+	mov r15, 3
+	mov r17, 110
+	out r15, r17
+	mov r17, 111
+	out r15, r17
+	mov r17, 116
+	out r15, r17
+	mov r17, 32
+	out r15, r17
+	mov r17, 102
+	out r15, r17
+	mov r17, 111
+	out r15, r17
+	mov r17, 117
+	out r15, r17
+	mov r17, 110
+	out r15, r17
+	mov r17, 100
+	out r15, r17
+	mov r17, 10
+	out r15, r17
+	halt
+	:matchFound
+	mov r15, 3
+	mov r17, 102
+	out r15, r17
+	mov r17, 111
+	out r15, r17
+	mov r17, 117
+	out r15, r17
+	mov r17, 110
+	out r15, r17
+	mov r17, 100
+	out r15, r17
+	mov r17, 10
+	out r15, r17
+	halt
