@@ -129,7 +129,7 @@ uint32_t binStrToUint32(const char *binStr) {
 }
 
 // ===================================================================
-//                  Pass 1: Build Label Map & Compute PC
+//                  Pass 1: Build Label Map & Compute PC & DC
 // ===================================================================
 void pass1(const char *filename) {
     FILE *fin = fopen(filename, "r");
@@ -157,7 +157,11 @@ void pass1(const char *filename) {
         if (line[0] == ':') {
             char label[50];
             if (sscanf(line + 1, "%49s", label) == 1) {
-                addLabel(label, pc);
+                if (section == CODE) {
+                    addLabel(label, pc);
+                } else if (section == DATA) {
+                    addLabel(label, dc);
+                }
             }
             continue;
         }
