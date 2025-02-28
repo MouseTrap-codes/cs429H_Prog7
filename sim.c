@@ -34,13 +34,13 @@ CPU* createCPU() {
 //// Tinker file header (new format)
 typedef struct {
     uint32_t file_type;       // Currently, 0
-    uint32_t code_seg_begin;  // Address where code is to be loaded (e.g. 0x2000)
-    uint32_t code_seg_size;   // Size of the code segment (in bytes)
-    uint32_t data_seg_begin;  // Address where data is to be loaded (e.g. 0x10000)
+    uint32_t code_seg_begin;  // Address into which the code is to be loaded (e.g. 0x2000)
+    uint32_t code_seg_size;   // Size of the code segment in bytes
+    uint32_t data_seg_begin;  // Address into which the data is to be loaded (e.g. 0x10000)
     uint32_t data_seg_size;   // Size of the data segment (could be 0)
 } tinker_file_header;
 
-//// Utility functions
+//// Utility Functions
 void trim(char *s) {
     char *p = s;
     while (isspace((unsigned char)*p))
@@ -65,20 +65,24 @@ uint32_t binStrToUint32(const char *binStr) {
     uint32_t value = 0;
     for (int i = 0; i < 32; i++) {
         value <<= 1;
-        if (binStr[i] == '1') {
+        if (binStr[i] == '1')
             value |= 1;
-        }
     }
     return value;
 }
 
-//// Instruction handling routines
+//// Instruction Handlers (unchanged from the original simulator)
 
-// Integer arithmetic
+// Integer Arithmetic Instructions
+void overflowErrorMessage() {
+    printf("Signed integer overflow!!!");
+}
+
 void handleAdd(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     int64_t val1 = cpu->registers[rs];
     int64_t val2 = cpu->registers[rt];
-    cpu->registers[rd] = (uint64_t)(val1 + val2);
+    int64_t result = val1 + val2;
+    cpu->registers[rd] = (uint64_t)result;
     cpu->programCounter += 4;
 }
 
@@ -90,7 +94,8 @@ void handleAddI(CPU* cpu, uint8_t rd, uint64_t L) {
 void handleSub(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     int64_t val1 = cpu->registers[rs];
     int64_t val2 = cpu->registers[rt];
-    cpu->registers[rd] = (uint64_t)(val1 - val2);
+    int64_t result = val1 - val2;
+    cpu->registers[rd] = (uint64_t)result;
     cpu->programCounter += 4;
 }
 
@@ -114,14 +119,14 @@ void handleDiv(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
         exit(1);
     }
     if (val1 == INT64_MIN && val2 == -1) {
-        fprintf(stderr, "Signed integer overflow!!!\n");
+        overflowErrorMessage();
         return;
     }
     cpu->registers[rd] = (uint64_t)(val1 / val2);
     cpu->programCounter += 4;
 }
 
-// Logic instructions
+// Logic Instructions
 void handleAnd(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     cpu->registers[rd] = cpu->registers[rs] & cpu->registers[rt];
     cpu->programCounter += 4;
@@ -142,7 +147,7 @@ void handleNot(CPU* cpu, uint8_t rd, uint8_t rs) {
     cpu->programCounter += 4;
 }
 
-// Shift instructions
+// Shift Instructions
 void handleShftR(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     cpu->registers[rd] = cpu->registers[rs] >> cpu->registers[rt];
     cpu->programCounter += 4;
@@ -163,7 +168,7 @@ void handleShftLI(CPU* cpu, uint8_t rd, uint64_t L) {
     cpu->programCounter += 4;
 }
 
-// Control instructions
+// Control Instructions
 void handleBr(CPU* cpu, uint8_t rd) {
     cpu->programCounter = cpu->registers[rd];
 }
@@ -173,7 +178,7 @@ void handleBrr(CPU* cpu, uint8_t rd) {
 }
 
 void handleBrrL(CPU* cpu, int64_t L) {
-    cpu->programCounter += (int64_t)L;
+    cpu->programCounter += L;
 }
 
 void handleBrnz(CPU* cpu, uint8_t rd, uint8_t rs) {
@@ -193,7 +198,6 @@ void handleReturn(CPU* cpu) {
     memcpy(&(cpu->programCounter), cpu->memory + cpu->registers[31] - 8, sizeof(cpu->programCounter));
 }
 
-// Conditional branch (greater than)
 void handleBrgt(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     if ((int64_t)cpu->registers[rs] <= (int64_t)cpu->registers[rt])
         cpu->programCounter += 4;
@@ -201,7 +205,7 @@ void handleBrgt(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
         cpu->programCounter = cpu->registers[rd];
 }
 
-// Privileged instructions
+// Privileged Instructions
 void priv(CPU* cpu, int rd, int rs, int rt, uint64_t L) {
     switch (L) {
         case 0x0: // Halt
@@ -240,9 +244,7 @@ void priv(CPU* cpu, int rd, int rs, int rt, uint64_t L) {
     }
 }
 
-// Data movement instructions
-
-// mov rd, (rs)(L) : load 64-bit value from memory at (register[rs] + L)
+// Data Movement Instructions
 void handleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, int64_t L) {
     int64_t address = cpu->registers[rs] + L;
     if ((address + 8) > MEM_SIZE || address < 0) {
@@ -253,20 +255,18 @@ void handleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, int64_t L) {
     cpu->programCounter += 4;
 }
 
-// mov rd, rs : copy register rs into rd.
 void movRdRs(CPU* cpu, uint8_t rd, uint8_t rs) {
     cpu->registers[rd] = cpu->registers[rs];
     cpu->programCounter += 4;
 }
 
-// mov rd, L : load the 12-bit immediate L into register rd (without shifting into the upper bits)
+// mov rd, L: set register rd to the unsigned 12-bit immediate L.
 void handleMovRdL(CPU* cpu, uint8_t rd, uint16_t L) {
     cpu->registers[rd] = (uint64_t)L;
     cpu->programCounter += 4;
 }
 
-// mov (rd)(L), rs : store register rs into memory at (register[rd] + L)
-void handleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) {
+void handleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint64_t L) {
     int64_t address = cpu->registers[rd] + L;
     if ((address + 8) > MEM_SIZE || address < 0) {
         fprintf(stderr, "Simulation error: memory access out of bounds\n");
@@ -276,7 +276,7 @@ void handleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) {
     cpu->programCounter += 4;
 }
 
-// Floating point instructions
+// Floating Point Instructions
 void handleAddf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     double val1 = 0, val2 = 0;
     memcpy(&val1, &(cpu->registers[rs]), sizeof(double));
@@ -345,7 +345,7 @@ void wrapperHandleBrgt(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L)
 void wrapperHandleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRdRsL(cpu, rd, rs, rt, (int64_t)L); }
 void wrapperMovRdRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { movRdRs(cpu, rd, rs); }
 void wrapperHandleMovRdL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRdL(cpu, rd, (uint16_t)L); }
-void wrapperHandleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRDLRs(cpu, rd, rs, rt, L); }
+void wrapperHandleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRDLRs(cpu, rd, rs, L); }
 
 void wrapperHandleAddf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleAddf(cpu, rd, rs, rt); }
 void wrapperHandleSubf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleSubf(cpu, rd, rs, rt); }
@@ -356,7 +356,7 @@ void wrapperHandlePriv(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L)
     priv(cpu, rd, rs, rt, L);
 }
 
-//// Global opcode function pointer array
+//// Global opcode function pointer array (256 entries)
 InstructionHandler opHandlers[256] = {0};
 
 void initOpcodeHandlers() {
@@ -364,51 +364,51 @@ void initOpcodeHandlers() {
         opHandlers[i] = NULL;
 
     // Logic Instructions (opcodes 0x0-0x3)
-    opHandlers[0x0] = wrapperHandleAnd;
-    opHandlers[0x1] = wrapperHandleOr;
-    opHandlers[0x2] = wrapperHandleXor;
-    opHandlers[0x3] = wrapperHandleNot;
+    opHandlers[0x0] = wrapperHandleAnd;   // and rd, rs, rt
+    opHandlers[0x1] = wrapperHandleOr;    // or rd, rs, rt
+    opHandlers[0x2] = wrapperHandleXor;   // xor rd, rs, rt
+    opHandlers[0x3] = wrapperHandleNot;   // not rd, rs
 
     // Shift Instructions (opcodes 0x4-0x7)
-    opHandlers[0x4] = wrapperHandleShftR;
-    opHandlers[0x5] = wrapperHandleShftRI;
-    opHandlers[0x6] = wrapperHandleShftL;
-    opHandlers[0x7] = wrapperHandleShftLI;
+    opHandlers[0x4] = wrapperHandleShftR;  // shftr rd, rs, rt
+    opHandlers[0x5] = wrapperHandleShftRI; // shftri rd, L
+    opHandlers[0x6] = wrapperHandleShftL;  // shftl rd, rs, rt
+    opHandlers[0x7] = wrapperHandleShftLI; // shftli rd, L
 
     // Control Instructions (opcodes 0x8-0xE)
-    opHandlers[0x8] = wrapperHandleBr;
-    opHandlers[0x9] = wrapperHandleBrr;
-    opHandlers[0xA] = wrapperHandleBrrL;  // brr L
-    opHandlers[0xB] = wrapperHandleBrnz;
-    opHandlers[0xC] = wrapperHandleCall;
-    opHandlers[0xD] = wrapperHandleReturn;
-    opHandlers[0xE] = wrapperHandleBrgt;
+    opHandlers[0x8] = wrapperHandleBr;     // br rd
+    opHandlers[0x9] = wrapperHandleBrr;    // brr rd
+    opHandlers[0xA] = wrapperHandleBrrL;   // brr L
+    opHandlers[0xB] = wrapperHandleBrnz;   // brnz rd, rs
+    opHandlers[0xC] = wrapperHandleCall;   // call rd, rs, rt
+    opHandlers[0xD] = wrapperHandleReturn; // return
+    opHandlers[0xE] = wrapperHandleBrgt;   // brgt rd, rs, rt
 
-    // Privileged Instructions (opcode 0xF)
-    opHandlers[0xF] = wrapperHandlePriv;
+    // Privileged Instruction (opcode 0xF)
+    opHandlers[0xF] = wrapperHandlePriv;   // priv rd, rs, rt, L
 
     // Data Movement Instructions (opcodes 0x10-0x13)
-    opHandlers[0x10] = wrapperHandleMovRdRsL;
-    opHandlers[0x11] = wrapperMovRdRs;
-    opHandlers[0x12] = wrapperHandleMovRdL;
-    opHandlers[0x13] = wrapperHandleMovRDLRs;
+    opHandlers[0x10] = wrapperHandleMovRdRsL; // mov rd, (rs)(L)
+    opHandlers[0x11] = wrapperMovRdRs;        // mov rd, rs
+    opHandlers[0x12] = wrapperHandleMovRdL;     // mov rd, L
+    opHandlers[0x13] = wrapperHandleMovRDLRs;   // mov (rd)(L), rs
 
     // Floating Point Instructions (opcodes 0x14-0x17)
-    opHandlers[0x14] = wrapperHandleAddf;
-    opHandlers[0x15] = wrapperHandleSubf;
-    opHandlers[0x16] = wrapperHandleMulf;
-    opHandlers[0x17] = wrapperHandleDivf;
+    opHandlers[0x14] = wrapperHandleAddf;   // addf rd, rs, rt
+    opHandlers[0x15] = wrapperHandleSubf;   // subf rd, rs, rt
+    opHandlers[0x16] = wrapperHandleMulf;   // mulf rd, rs, rt
+    opHandlers[0x17] = wrapperHandleDivf;   // divf rd, rs, rt
 
     // Integer Arithmetic Instructions (opcodes 0x18-0x1D)
-    opHandlers[0x18] = wrapperHandleAdd;
-    opHandlers[0x19] = wrapperHandleAddI;
-    opHandlers[0x1A] = wrapperHandleSub;
-    opHandlers[0x1B] = wrapperHandleSubI;
-    opHandlers[0x1C] = wrapperHandleMul;
-    opHandlers[0x1D] = wrapperHandleDiv;
+    opHandlers[0x18] = wrapperHandleAdd;    // add rd, rs, rt
+    opHandlers[0x19] = wrapperHandleAddI;   // addi rd, L
+    opHandlers[0x1A] = wrapperHandleSub;    // sub rd, rs, rt
+    opHandlers[0x1B] = wrapperHandleSubI;   // subi rd, L
+    opHandlers[0x1C] = wrapperHandleMul;    // mul rd, rs, rt
+    opHandlers[0x1D] = wrapperHandleDiv;    // div rd, rs, rt
 }
 
-//// Main simulation loop
+//// Main Simulation Loop
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <program.tko>\n", argv[0]);
@@ -449,7 +449,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error reading code segment\n");
         exit(1);
     }
-    // Load data segment into memory.
+    // Load data segment into memory (if any).
     if (header.data_seg_size > 0) {
         if (header.data_seg_begin + header.data_seg_size > MEM_SIZE) {
             fprintf(stderr, "Data segment does not fit in memory\n");
@@ -462,10 +462,10 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
     
-    // Initialize opcode handler array.
+    // Initialize opcode function pointer array.
     initOpcodeHandlers();
     
-    // Simulation loop: run while PC is within the code segment.
+    // Simulation loop: run while programCounter is within the code segment.
     uint64_t codeEnd = header.code_seg_begin + header.code_seg_size;
     while (cpu->programCounter >= header.code_seg_begin && cpu->programCounter < codeEnd) {
         // Fetch 32-bit instruction from memory.
@@ -477,44 +477,33 @@ int main(int argc, char *argv[]) {
         // Bits 26-22: rd (5 bits)
         // Bits 21-17: rs (5 bits)
         // Bits 16-12: rt (5 bits)
-        // Bits 11-0 : immediate L (12 bits) for instructions that use it.
+        // Bits 11-0 : immediate L (12 bits)
         uint8_t opcode = (instruction >> 27) & 0x1F;
-        //printf("opcode: 0x%x ", opcode);
         uint8_t rd     = (instruction >> 22) & 0x1F;
-        //printf("rd: %d ", rd);
         uint8_t rs     = (instruction >> 17) & 0x1F;
-        //printf("rs: %d ", rs);
         uint8_t rt     = (instruction >> 12) & 0x1F;
-        //printf("rt: %d ", rt);
-        uint16_t imm = instruction & 0xFFF;
-        //printf("L: %d\n", imm);
+        uint16_t imm   = instruction & 0xFFF;
         uint64_t L = 0;
         
         // For immediate instructions:
-        // For brr L (opcode 0xA) we sign-extend the immediate since it can be negative.
-        // For immediate instructions:
+        // For brr L (opcode 0xA) we sign-extend the immediate.
         if (opcode == 0xA || opcode == 0x10 || opcode == 0x13) {
-            // brr L needs sign extension
             int64_t signedImm = imm;
-            if (imm & 0x800) // If bit 11 is set, sign-extend.
+            if (imm & 0x800)
                 signedImm |= ~0xFFF;
-            L = (uint64_t) signedImm;
-
+            L = (uint64_t)signedImm;
         } else if (
-            // any opcode that uses bits [11:0] as an unsigned immediate
             opcode == 0x19 || // addi
             opcode == 0x1B || // subi
             opcode == 0x12 || // mov rd, L
             opcode == 0xF  || // priv rd, rs, rt, L
             opcode == 0x5  || // shftri
-            opcode == 0x7   // shftli
-            // opcode == 0x10 || // mov rd, (rs)(L)  <--- Add this
-            // opcode == 0x13    // mov (rd)(L), rs  <--- And this
+            opcode == 0x7     // shftli
         ) {
             L = imm;
         }
         
-        // Dispatch instruction.
+        // Dispatch the instruction.
         if (opHandlers[opcode]) {
             opHandlers[opcode](cpu, rd, rs, rt, L);
         } else {
