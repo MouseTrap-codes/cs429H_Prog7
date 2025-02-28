@@ -262,7 +262,14 @@ void movRdRs(CPU* cpu, uint8_t rd, uint8_t rs) {
 
 // mov rd, L: set register rd to the unsigned 12-bit immediate L.
 void handleMovRdL(CPU* cpu, uint8_t rd, uint16_t L) {
-    cpu->registers[rd] = (uint64_t)L;
+    // Clear bits 52-63 of rd and insert L
+    cpu->registers[rd] &= ~(0xFFFULL); // Clear bits 52-63
+    cpu->registers[rd] |= ((uint64_t)L & 0xFFF); // Insert L in bits 52-63
+
+
+
+
+    // Move to the next instruction
     cpu->programCounter += 4;
 }
 
