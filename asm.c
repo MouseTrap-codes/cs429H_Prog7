@@ -393,7 +393,7 @@ void assembleStandard(const char *line, char *binStr) {
     else if(!strcmp(e->format,"rd") && num>=2){
         rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
     }
-    else if(strcmp(e->format,"")==0){
+    else if(!strcmp(e->format,"")==0){
         // e.g., return => no operand
     }
     else {
