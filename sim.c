@@ -632,6 +632,10 @@ int main(int argc, char *argv[]) {
             // opcode == 0x10 || // mov rd, (rs)(L)  <--- Add this
             // opcode == 0x13    // mov (rd)(L), rs  <--- And this
         ) {
+            if (imm & 0x800) {
+                fprintf(stderr, "Simulation error: negative immediate not allowed for this instruction\n");
+                exit(1);
+            }
             L = imm;
         }
         
