@@ -1,33 +1,33 @@
 .code
-    mov   r1, 0
-    mov   r2, 1
-    mov   r10, 1
-    priv  r0, r1, r0, 3   ; r0 ← Input[r1]  (r0 now holds n)
+	mov r1, 0
+	mov r2, 1
+	mov r10, 1
+	priv r0, r1, r0, 3 
 
-    ld    r3, :continue  
-    brgt  r3, r0, r1
-    halt
-    :continue
-    out   r10, r1         ; output 0
-    sub   r0, r0, r2      ; subtract 1 from r0
-    ld    r4, :output_one ; r4 ← address of label output_one
-    brnz  r4, r0         ; if r0 ≠ 0, branch to output_one; else fall through and halt
-    halt
-    :output_one
-    out   r10, r2         ; output 1
-    sub   r0, r0, r2
-    ld    r5, :fib_loop   ; r5 ← address of label fib_loop
-    brnz  r5, r0         ; if r0 ≠ 0, branch to fib_loop; else halt
-    halt
-    :fib_loop
-    mov   r6, r1         ; f_prev = 0
-    mov   r7, r2         ; f_curr = 1
-    :loop
-    add   r8, r6, r7
-    out   r10, r8
-    sub   r0, r0, r2
-    mov   r6, r7
-    mov   r7, r8
-    ld    r9, :loop     
-    brnz  r9, r0         
-    halt
+	ld r3, :continue  
+	brgt r3, r0, r1
+	halt
+	:continue
+	out r10, r1         
+	sub r0, r0, r2      
+	ld r4, :output_one 
+	brnz r4, r0        
+	halt
+	:output_one
+	out r10, r2      
+	sub r0, r0, r2
+	ld r5, :fib_loop  
+	brnz r5, r0         
+	halt
+	:fib_loop
+	mov r6, r1         
+	mov r7, r2        
+	:loop
+	add r8, r6, r7
+	out r10, r8
+	sub r0, r0, r2
+	mov r6, r7
+	mov r7, r8
+	ld r9, :loop     
+	brnz 9, r0         
+	halt
