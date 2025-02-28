@@ -406,28 +406,27 @@ void assembleStandard(const char *line, char *binStr) {
 
 static void assembleReturn(char *binStr)
 {
-    unsigned int inst = (0xd << 27);  
+    unsigned int inst = (0xd << 27);  // 0xd0000000 in hex
 
     char tmp[33];
     intToBinaryStr(inst, 32, tmp);
     strcpy(binStr, tmp);
 }
 
-// If mnemonic is "mov" or "brr", use custom routines; otherwise, standard.
 void assembleInstruction(const char *line, char *binStr) {
-    char mnemonic[16];
+    char mnemonic[16] = {0};
     sscanf(line, "%15s", mnemonic);
-
-    if (strcmp(mnemonic, "mov") == 0) {
+    if (!strcmp(mnemonic, "return")) {
+        assembleReturn(binStr);
+        return;
+    }
+    if(!strcmp(mnemonic,"mov")){
         assembleMov(line, binStr);
     }
-    else if (strcmp(mnemonic, "brr") == 0) {
-        char dummy[16], operand[64];
-        if (sscanf(line, "%15s %63s", dummy, operand) < 2) {
-            strcpy(binStr, "ERROR");
-            return;
-        }
-        assembleBrr(operand, binStr);
+    else if(!strcmp(mnemonic,"brr")){
+        const char *p=line+3;
+        while(isspace((unsigned char)*p)) p++;
+        assembleBrrOperand(p, binStr);
     }
     else {
         assembleStandard(line, binStr);
