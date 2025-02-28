@@ -9,11 +9,11 @@
 #include <stdint.h>
 #include <regex.h>
 #include <stdbool.h>
-#include <endian.h>
+#include <endian.h> 
 
 #define MEM_SIZE 524288 // 512 KB
 
-//// CPU definition
+//// here we define the CPU
 typedef struct cpu {
     uint8_t memory[MEM_SIZE];
     int64_t registers[32];
@@ -27,210 +27,230 @@ CPU* createCPU() {
         perror("malloc failed!");
         exit(1);
     }
+
     memset(cpu, 0, sizeof(*cpu));
     return cpu;
 }
 
-//// Tinker file header (new format)
-typedef struct {
-    uint32_t file_type;       // Currently, 0
-    uint32_t code_seg_begin;  // Address into which the code is to be loaded (e.g. 0x2000)
-    uint32_t code_seg_size;   // Size of the code segment in bytes
-    uint32_t data_seg_begin;  // Address into which the data is to be loaded (e.g. 0x10000)
-    uint32_t data_seg_size;   // Size of the data segment (could be 0)
-} tinker_file_header;
-
-//// Utility Functions
-void trim(char *s) {
-    char *p = s;
-    while (isspace((unsigned char)*p))
-        p++;
-    if (p != s)
-        memmove(s, p, strlen(p) + 1);
-    size_t len = strlen(s);
-    while (len > 0 && isspace((unsigned char)s[len - 1])) {
-        s[len - 1] = '\0';
-        len--;
-    }
-}
-
-void intToBinaryStr(unsigned int value, int width, char *outStr) {
-    for (int i = width - 1; i >= 0; i--) {
-        outStr[width - 1 - i] = ((value >> i) & 1) ? '1' : '0';
-    }
-    outStr[width] = '\0';
-}
-
-uint32_t binStrToUint32(const char *binStr) {
-    uint32_t value = 0;
-    for (int i = 0; i < 32; i++) {
-        value <<= 1;
-        if (binStr[i] == '1')
-            value |= 1;
-    }
-    return value;
-}
-
-//// Instruction Handlers (unchanged from the original simulator)
-
-// Integer Arithmetic Instructions
+// handling integer arithmetic instructions
 void overflowErrorMessage() {
     printf("Signed integer overflow!!!");
 }
 
+// Performs signed addition of two 64-bit signed values in registers rs and rt and stores the result in register rd.
 void handleAdd(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    int64_t val1 = cpu->registers[rs];
-    int64_t val2 = cpu->registers[rt];
+    //printf("Called! Add\n");
+
+    int64_t val1 = (int64_t)cpu->registers[rs];
+    int64_t val2 = (int64_t)cpu->registers[rt];
+
     int64_t result = val1 + val2;
+
+
     cpu->registers[rd] = (uint64_t)result;
     cpu->programCounter += 4;
 }
 
+// Adds the unsigned value L to the value in register rd.
 void handleAddI(CPU* cpu, uint8_t rd, uint64_t L) {
     cpu->registers[rd] = cpu->registers[rd] + L;
     cpu->programCounter += 4;
 }
 
+// Performs signed subtraction of two 64-bit signed values in registers rs and rt and stores the result in register rd.
 void handleSub(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    int64_t val1 = cpu->registers[rs];
-    int64_t val2 = cpu->registers[rt];
+    int64_t val1 = (int64_t)cpu->registers[rs];
+    int64_t val2 = (int64_t)cpu->registers[rt];
+
     int64_t result = val1 - val2;
+
+
     cpu->registers[rd] = (uint64_t)result;
     cpu->programCounter += 4;
 }
 
+// Subtracts the unsigned value L from the value in register rd.
 void handleSubI(CPU* cpu, uint8_t rd, uint64_t L) {
-    cpu->registers[rd] = cpu->registers[rd] - L;
+    cpu->registers[rd] = cpu->registers[rd] - L;  
     cpu->programCounter += 4;
 }
 
+// Performs signed multiplication of two 64-bit signed values in registers rs and rt and stores the result in register rd.
 void handleMul(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    int64_t val1 = cpu->registers[rs];
-    int64_t val2 = cpu->registers[rt];
+    int64_t val1 = (int64_t)cpu->registers[rs];
+    int64_t val2 = (int64_t)cpu->registers[rt];
+
+
+
     cpu->registers[rd] = (uint64_t)(val1 * val2);
     cpu->programCounter += 4;
 }
 
+// Performs signed division of two 64-bit signed values in registers rs and rt and stores the result in register rd.
 void handleDiv(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    int64_t val1 = cpu->registers[rs];
-    int64_t val2 = cpu->registers[rt];
+    int64_t val1 = (int64_t)cpu->registers[rs];
+    int64_t val2 = (int64_t)cpu->registers[rt];
+
+    // Division-by-zero check
     if (val2 == 0) {
-        fprintf(stderr, "Simulation error: divide by zero\n");
+        fprintf(stderr, "Simulation error");
         exit(1);
     }
+
+    // Handle INT64_MIN / -1 overflow case
     if (val1 == INT64_MIN && val2 == -1) {
         overflowErrorMessage();
         return;
     }
+
     cpu->registers[rd] = (uint64_t)(val1 / val2);
     cpu->programCounter += 4;
 }
 
-// Logic Instructions
+//// handling logic instructions ////////////////////
+// Performs bitwise “and” of two 64-bit values in registers rs and rt and stores the result in register rd 
 void handleAnd(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    cpu->registers[rd] = cpu->registers[rs] & cpu->registers[rt];
+    cpu->registers[rd] = cpu->registers[rs] & cpu->registers[rt]; 
     cpu->programCounter += 4;
 }
 
+// Performs bitwise “or” of two 64-bit values in registers rs and rt and stores the result in register rd
 void handleOr(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    cpu->registers[rd] = cpu->registers[rs] | cpu->registers[rt];
+    cpu->registers[rd] = cpu->registers[rs] | cpu->registers[rt]; 
     cpu->programCounter += 4;
 }
 
+// Performs bitwise “xor” of two 64-bit values in registers rs and rt and stores the result in register rd
 void handleXor(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    cpu->registers[rd] = cpu->registers[rs] ^ cpu->registers[rt];
+    cpu->registers[rd] = cpu->registers[rs] ^ cpu->registers[rt]; 
     cpu->programCounter += 4;
 }
 
+// Performs bitwise “not” (one’s complement) of a 64-bit value in register rs and stores the result in register rd 
 void handleNot(CPU* cpu, uint8_t rd, uint8_t rs) {
-    cpu->registers[rd] = ~cpu->registers[rs];
+    cpu->registers[rd] = ~cpu->registers[rs]; 
     cpu->programCounter += 4;
 }
 
-// Shift Instructions
+// Shifts the value in register rs to the right by the number of bits specified in the value in register rt and stores the result in register rd
 void handleShftR(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    cpu->registers[rd] = cpu->registers[rs] >> cpu->registers[rt];
+    cpu->registers[rd] = cpu->registers[rs] >> cpu->registers[rt]; 
     cpu->programCounter += 4;
 }
 
+// Shifts the value in register rd to the right by the number of bits specified by L
 void handleShftRI(CPU* cpu, uint8_t rd, uint64_t L) {
-    cpu->registers[rd] = cpu->registers[rd] >> L;
+    cpu->registers[rd] = cpu->registers[rd] >> L; 
     cpu->programCounter += 4;
 }
 
+// Shifts the value in register rs to the left by the number of bits specified in the value in register rt and stores the result in register rd 
 void handleShftL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    cpu->registers[rd] = cpu->registers[rs] << cpu->registers[rt];
+    cpu->registers[rd] = cpu->registers[rs] << cpu->registers[rt]; 
     cpu->programCounter += 4;
 }
 
+// Shifts the value in register rd to the left by the number of bits specified by L
 void handleShftLI(CPU* cpu, uint8_t rd, uint64_t L) {
-    cpu->registers[rd] = cpu->registers[rd] << L;
+    cpu->registers[rd] = cpu->registers[rd] << L; 
     cpu->programCounter += 4;
 }
 
-// Control Instructions
+
+// handling control instructions //////////
+// Jumps to the instruction address specified by the value in register rd 
 void handleBr(CPU* cpu, uint8_t rd) {
-    cpu->programCounter = cpu->registers[rd];
+    cpu->programCounter = cpu->registers[rd] ;
 }
 
+// Jumps to the instruction address specified by adding the value in register rd to the program counter
 void handleBrr(CPU* cpu, uint8_t rd) {
     cpu->programCounter += cpu->registers[rd];
 }
 
+// Jumps to the instruction address specified by adding L to the program counter (L can be negative)
 void handleBrrL(CPU* cpu, int64_t L) {
-    cpu->programCounter += L;
+    cpu->programCounter += (int64_t)L;
 }
 
+// Jumps to the instruction address specified by the value in register rd if rs is nonzero, otherwise continue to the next instruction
 void handleBrnz(CPU* cpu, uint8_t rd, uint8_t rs) {
-    if (cpu->registers[rs] == 0)
+    if (cpu->registers[rs] == 0) {
         cpu->programCounter += 4;
-    else
+    } else {
         cpu->programCounter = cpu->registers[rd];
+    }
 }
 
+// Calls the function that starts at the address specified by rd and stores the return address on the stack.
 void handleCall(CPU *cpu, uint8_t rd) {
-    cpu->programCounter += 4;
-    memcpy(cpu->memory + cpu->registers[31] - 8, &(cpu->programCounter), sizeof(cpu->programCounter));
+    // Save return address (pc + 4) on the stack
+    //cpu->registers[31] -= 8;  // Move stack pointer down // you apparently are not supposed to do this
+    // *(uint64_t *)(cpu->memory + (int64_t)cpu->registers[31]) = cpu->programCounter + 4;
+
+    cpu->programCounter += 4; 
+
+    memcpy(cpu->memory + (int64_t)cpu->registers[31] - 8, &(cpu->programCounter), sizeof(cpu->programCounter));
+
+    // Jump to the function address stored in register rd
     cpu->programCounter = cpu->registers[rd];
 }
 
+// Restores the program counter from the stack and returns to the caller
 void handleReturn(CPU* cpu) {
-    memcpy(&(cpu->programCounter), cpu->memory + cpu->registers[31] - 8, sizeof(cpu->programCounter));
+    // Load return address
+    //uint64_t returnAddress = *(uint64_t *)(cpu->memory + (int64_t)cpu->registers[31]);
+    memcpy(&(cpu->programCounter), cpu->memory + (int64_t)cpu->registers[31] - 8, sizeof(cpu->programCounter));
+
+
+
+    // Undo call (move the stack pointer back up)
+    //cpu->registers[31] += 8; you apparently are not supposed to do this
+
+    // Now set programCounter to returnAddress
+    //cpu->programCounter = returnAddress; 
 }
 
+// Jumps to the instruction address specified by the value in register rd if rs is greater than rt , rs and rt being signed integers; otherwise continue to the next instruction
 void handleBrgt(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
-    if ((int64_t)cpu->registers[rs] <= (int64_t)cpu->registers[rt])
+    if (((int64_t) cpu->registers[rs]) <= ((int64_t)cpu->registers[rt])) {
         cpu->programCounter += 4;
-    else
+    } else {
         cpu->programCounter = cpu->registers[rd];
+    }
 }
 
-// Privileged Instructions
+// handling priveledged instructions
 void priv(CPU* cpu, int rd, int rs, int rt, uint64_t L) {
+    //printf("Called! Priv\n");
     switch (L) {
-        case 0x0: // Halt
+        case 0x0: // Halt instruction: stop simulation
+            //printf("RAVI TEJ 1\n");
             exit(0);
-        case 0x1: // Trap: switch to supervisor mode
-            cpu->userMode = 0;
+            break;
+        case 0x1: // Trap instruction: switch to supervisor mode and handle system call
+            //printf("RAVI TEJ 2\n");
+            cpu->userMode = 0; // false because we are now in supervisor mode
             cpu->programCounter += 4;
             break;
-        case 0x2: // RTE: return to user mode
-            cpu->userMode = 1;
+        case 0x2: // RTE instruction: return from exception, switch back to user mode
+            cpu->userMode = 1; // true because we are back in user mode
             cpu->programCounter += 4;
             break;
-        case 0x3: // Input: rd <- Input[rs]
+        case 0x3: // Input instruction: rd <- Input[rs]
+            //printf("INPUT");
             if (cpu->registers[rs] != 0) {
                 printf("unsupported port for input");
                 return;
             }
-            {
-                int64_t input;
-                scanf("%lld", &input);
-                cpu->registers[rd] = (uint64_t)input;
-                cpu->programCounter += 4;
-            }
+            int64_t input;
+            scanf("%lld", &input);
+        
+            cpu->registers[rd] = (uint64_t)input;
+            cpu->programCounter += 4;
             break;
-        case 0x4: // Output: Output[rd] <- rs
+        case 0x4: // Output instruction: Output[rd] <- rs
+            //printf("OUTPUT");
             if (cpu->registers[rd] != 1) {
                 printf("unsupported port for output");
                 return;
@@ -238,88 +258,138 @@ void priv(CPU* cpu, int rd, int rs, int rt, uint64_t L) {
             printf("%llu", cpu->registers[rs]);
             cpu->programCounter += 4;
             break;
-        default:
-            fprintf(stderr, "Simulation error: illegal priv operation\n");
+        default: // Illegal L value: undefined priv operation
+            fprintf(stderr, "Simulation error");
             exit(1);
     }
+    // Note: The program counter (PC) is incremented by 4 after every instruction
+    // in the main simulation loop (except for control instructions), so it is not
+    // updated here.
 }
 
-// Data Movement Instructions
+// handling data movement instructions /////////
+/*
+    Reads the value in the memory location pointed to by the value composed of the value in
+    register rs as a base register and the literal value L as an index, and stores it in register rd
+*/
 void handleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, int64_t L) {
-    int64_t address = cpu->registers[rs] + L;
-    if ((address + 8) > MEM_SIZE || address < 0) {
-        fprintf(stderr, "Simulation error: memory access out of bounds\n");
+    int64_t address = (int64_t)(cpu->registers[rs] + L);
+
+    // Check for out-of-bounds memory access
+    if ((address + 8) > (512 * 1024) || address < 0) {
+        fprintf(stderr, "Simulation error");
         exit(1);
     }
+
+
     cpu->registers[rd] = *(uint64_t*)(cpu->memory + address);
     cpu->programCounter += 4;
 }
 
+// Reads the value in register rs and stores it in register rd 
 void movRdRs(CPU* cpu, uint8_t rd, uint8_t rs) {
     cpu->registers[rd] = cpu->registers[rs];
     cpu->programCounter += 4;
 }
 
-// mov rd, L: set register rd to the unsigned 12-bit immediate L.
+// Sets bits 52:63 (inclusive) of register rd to the value of L
 void handleMovRdL(CPU* cpu, uint8_t rd, uint16_t L) {
-    cpu->registers[rd] = (uint64_t)L;
+    // Clear bits 52-63 of rd and insert L
+    cpu->registers[rd] &= ~(0xFFFULL); // Clear bits 52-63
+    cpu->registers[rd] |= ((uint64_t)L & 0xFFF); // Insert L in bits 52-63
+
+
+
+
+    // Move to the next instruction
     cpu->programCounter += 4;
 }
 
+/*
+    Reads the value in register rs and stores it in the memory location pointed to by the value
+    composed of the value in register rd . as a base register and the literal L as an index.
+*/
 void handleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint64_t L) {
-    int64_t address = cpu->registers[rd] + L;
-    if ((address + 8) > MEM_SIZE || address < 0) {
-        fprintf(stderr, "Simulation error: memory access out of bounds\n");
+    // Calculate the memory address using rd as the base and L as the offset
+    int64_t address = (int64_t)(cpu->registers[rd] + L);
+
+    // Check for out-of-bounds memory access
+    if ((address + 8) > (512 * 1024) || address < 0) {
+        fprintf(stderr, "Simulation error");
         exit(1);
     }
+    // Store the value from register rs into memory at the computed address
     *(uint64_t *)(cpu->memory + address) = cpu->registers[rs];
+
+    // Move to the next instruction
     cpu->programCounter += 4;
 }
 
-// Floating Point Instructions
+// handling floating point instructions
+// Performs floating-point addition of registers rs and rt, result in rd
 void handleAddf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     double val1 = 0, val2 = 0;
     memcpy(&val1, &(cpu->registers[rs]), sizeof(double));
     memcpy(&val2, &(cpu->registers[rt]), sizeof(double));
+
     double result = val1 + val2;
+
     memcpy(&(cpu->registers[rd]), &result, sizeof(double));
+
     cpu->programCounter += 4;
 }
 
+// Performs floating-point subtraction of registers rs and rt, result in rd
 void handleSubf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     double val1 = 0, val2 = 0;
     memcpy(&val1, &(cpu->registers[rs]), sizeof(double));
     memcpy(&val2, &(cpu->registers[rt]), sizeof(double));
+
     double result = val1 - val2;
+
     memcpy(&(cpu->registers[rd]), &result, sizeof(double));
+
     cpu->programCounter += 4;
 }
 
+// Performs floating-point multiplication of registers rs and rt, result in rd
 void handleMulf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     double val1 = 0, val2 = 0;
     memcpy(&val1, &(cpu->registers[rs]), sizeof(double));
     memcpy(&val2, &(cpu->registers[rt]), sizeof(double));
-    double result = val1 * val2;
+
+    double result = val1 * val2;  // <-- Correct multiplication
+
     memcpy(&(cpu->registers[rd]), &result, sizeof(double));
+
     cpu->programCounter += 4;
 }
 
+// Performs floating-point division of registers rs and rt, result in rd 
 void handleDivf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt) {
     double val1 = 0, val2 = 0;
+    // First, copy both operands out of the registers
     memcpy(&val1, &(cpu->registers[rs]), sizeof(double));
     memcpy(&val2, &(cpu->registers[rt]), sizeof(double));
+
+    // Division-by-zero check
     if (val2 == 0.0) {
         fprintf(stderr, "Simulation error: floating-point divide by zero\n");
         exit(1);
     }
+
     double result = val1 / val2;
+
     memcpy(&(cpu->registers[rd]), &result, sizeof(double));
+
     cpu->programCounter += 4;
 }
 
-//// Instruction Handler Wrappers (for uniform function pointer type)
+// here we implement the function array for O(1) access based on opcode
+// Uniform Instruction Handler Type and Wrappers
 typedef void (*InstructionHandler)(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L);
 
+// For instructions that ignore the immediate value L:
 void wrapperHandleAdd(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleAdd(cpu, rd, rs, rt); }
 void wrapperHandleAddI(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleAddI(cpu, rd, L); }
 void wrapperHandleSub(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleSub(cpu, rd, rs, rt); }
@@ -342,40 +412,50 @@ void wrapperHandleCall(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L)
 void wrapperHandleReturn(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleReturn(cpu); }
 void wrapperHandleBrgt(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleBrgt(cpu, rd, rs, rt); }
 
+// Data Movement wrappers
 void wrapperHandleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRdRsL(cpu, rd, rs, rt, (int64_t)L); }
 void wrapperMovRdRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { movRdRs(cpu, rd, rs); }
 void wrapperHandleMovRdL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRdL(cpu, rd, (uint16_t)L); }
 void wrapperHandleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMovRDLRs(cpu, rd, rs, L); }
 
+// Floating Point wrappers
 void wrapperHandleAddf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleAddf(cpu, rd, rs, rt); }
 void wrapperHandleSubf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleSubf(cpu, rd, rs, rt); }
 void wrapperHandleMulf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleMulf(cpu, rd, rs, rt); }
 void wrapperHandleDivf(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) { handleDivf(cpu, rd, rs, rt); }
 
+// Privileged instructions wrapper
+// The opcode for privileged instructions is 0xF. We dispatch based on L.
 void wrapperHandlePriv(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, uint64_t L) {
+    //printf("I was called\n");
+   // printf("%lu\n", L);
     priv(cpu, rd, rs, rt, L);
 }
 
-//// Global opcode function pointer array (256 entries)
+
+// Global Function Pointer Array (256 entries)
 InstructionHandler opHandlers[256] = {0};
 
 void initOpcodeHandlers() {
-    for (int i = 0; i < 256; i++)
+    // Clear array (if not already zeroed)
+    for (int i = 0; i < 256; i++) {
         opHandlers[i] = NULL;
+    }
+    // Use opcodes exactly as defined in the manual:
 
-    // Logic Instructions (opcodes 0x0-0x3)
+    // Logic Instructions (0x0 - 0x3)
     opHandlers[0x0] = wrapperHandleAnd;   // and rd, rs, rt
     opHandlers[0x1] = wrapperHandleOr;    // or rd, rs, rt
     opHandlers[0x2] = wrapperHandleXor;   // xor rd, rs, rt
     opHandlers[0x3] = wrapperHandleNot;   // not rd, rs
 
-    // Shift Instructions (opcodes 0x4-0x7)
+    // Shift Instructions (0x4 - 0x7)
     opHandlers[0x4] = wrapperHandleShftR;  // shftr rd, rs, rt
     opHandlers[0x5] = wrapperHandleShftRI; // shftri rd, L
     opHandlers[0x6] = wrapperHandleShftL;  // shftl rd, rs, rt
     opHandlers[0x7] = wrapperHandleShftLI; // shftli rd, L
 
-    // Control Instructions (opcodes 0x8-0xE)
+    // Control Instructions (0x8 - 0xE)
     opHandlers[0x8] = wrapperHandleBr;     // br rd
     opHandlers[0x9] = wrapperHandleBrr;    // brr rd
     opHandlers[0xA] = wrapperHandleBrrL;   // brr L
@@ -387,19 +467,19 @@ void initOpcodeHandlers() {
     // Privileged Instruction (opcode 0xF)
     opHandlers[0xF] = wrapperHandlePriv;   // priv rd, rs, rt, L
 
-    // Data Movement Instructions (opcodes 0x10-0x13)
+    // Data Movement Instructions (0x10 - 0x13)
     opHandlers[0x10] = wrapperHandleMovRdRsL; // mov rd, (rs)(L)
     opHandlers[0x11] = wrapperMovRdRs;        // mov rd, rs
     opHandlers[0x12] = wrapperHandleMovRdL;     // mov rd, L
     opHandlers[0x13] = wrapperHandleMovRDLRs;   // mov (rd)(L), rs
 
-    // Floating Point Instructions (opcodes 0x14-0x17)
+    // Floating Point Instructions (0x14 - 0x17)
     opHandlers[0x14] = wrapperHandleAddf;   // addf rd, rs, rt
     opHandlers[0x15] = wrapperHandleSubf;   // subf rd, rs, rt
     opHandlers[0x16] = wrapperHandleMulf;   // mulf rd, rs, rt
     opHandlers[0x17] = wrapperHandleDivf;   // divf rd, rs, rt
 
-    // Integer Arithmetic Instructions (opcodes 0x18-0x1D)
+    // Integer Arithmetic Instructions (0x18 - 0x1D)
     opHandlers[0x18] = wrapperHandleAdd;    // add rd, rs, rt
     opHandlers[0x19] = wrapperHandleAddI;   // addi rd, L
     opHandlers[0x1A] = wrapperHandleSub;    // sub rd, rs, rt
