@@ -13,7 +13,7 @@
     ld r26, :searchLoop
     ld r28, :noMatch
     ld r30, :matchFound
-:loopInput
+    :loopInput
     priv r6, r2, r6, 3
     mov (r8)(0), r6
     addi r8, r22
@@ -21,7 +21,7 @@
     brnz r14, r5
     clr r3
     priv r4, r2, r4, 3
-:searchLoop
+    :searchLoop
     brgt r28, r3, r10
     clr r7
     sub r7, r10, r3
@@ -34,15 +34,15 @@
     brgt r16, r4, r9
     brgt r18, r9, r4
     br r30
-:setLow
+    :setLow
     ld r11, 1
     add r3, r24, r11
     br r26
-:setHigh
+    :setHigh
     ld r13, 1
     sub r10, r24, r13
     br r26
-:noMatch
+    :noMatch
     mov r15, 3
     mov r17, 110
     out r15, r17
@@ -65,7 +65,7 @@
     mov r17, 10
     out r15, r17
     halt
-:matchFound
+    :matchFound
     mov r15, 3
     mov r17, 102
     out r15, r17
