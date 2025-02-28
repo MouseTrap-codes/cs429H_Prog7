@@ -2,7 +2,7 @@
     mov r14, 0
     mov r15, 1
     priv r12, r14, r12, 3
-    ld r16, :FIB_COMPUTE
+    ld r16, :FIBCOMPUTE
     mov r18, 2
     brgt r16, r12, r18
     ld r17, :EDGE_HANDLE
@@ -10,12 +10,12 @@
     brgt r17, r12, r19
     priv r15, r14, r14, 4
     halt
-    :FIB_COMPUTE
+    :FIBCOMPUTE
     mov r20, 0
     mov r21, 1
     mov r24, 2
     sub r12, r12, r24
-    ld r25, :FIB_LOOP
+    ld r25, :FIBLOOP
     :FIB_LOOP
     add r26, r20, r21
     mov r20, r21
@@ -25,7 +25,7 @@
     brnz r25, r12
     priv r15, r21, r14, 4
     halt
-    :EDGE_HANDLE
+    :EDGEHANDLE
     mov r30, 1
     priv r15, r30, r14, 4
     halt
