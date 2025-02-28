@@ -4,7 +4,6 @@
 	ld r1, 8
 	ld r0, 0
 	priv r6, r0, r6, 3
-	shftri r6, 32
 	mul r8, r6, r6
 	mov r7, r6
 	subi r7, 1
@@ -36,7 +35,7 @@
 :outerLoop
 	mov r23, 0
 :middleLoop
-	mov r30, 0
+	clr r30
 	mov r24, 0
 :innerLoop
 	mul r25, r22, r6
