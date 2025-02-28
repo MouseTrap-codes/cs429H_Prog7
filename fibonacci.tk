@@ -2,8 +2,8 @@
 	mov r1, 0
 	mov r2, 1
 	mov r10, 1
-	priv r0, r1, r0, 3 
-	ld r3, :continue  
+	priv r0, r1, r0, 3
+	ld r3, :continue
 	brgt r3, r0, r1
 	halt
 	:continue
