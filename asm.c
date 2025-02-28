@@ -238,184 +238,12 @@ void populateInstMap() {
     addInst("divf",  0x17, "rd rs rt");
 }
 
-// ===================================================================
-// Assemble "brr", "mov", or standard
-// ===================================================================
-void assembleBrrOperand(const char *operand, char *binStr) {
-    while(isspace((unsigned char)*operand)) operand++;
-    int opcode, reg=0, imm=0;
-    if(operand[0]=='r'){
-        opcode=0x9;
-        reg=(int)strtol(operand+1,NULL,0);
-    } else{
-        opcode=0xa;
-        imm=(int)strtol(operand,NULL,0);
-    }
-    unsigned int inst=(opcode<<27)|(reg<<22)|((imm&0xFFF));
-    char tmp[33];
-    intToBinaryStr(inst,32,tmp);
-    strcpy(binStr,tmp);
-}
-
-void assembleMov(const char *line, char *binStr) {
-    char mnemonic[10], token1[64], token2[64];
-    if(sscanf(line, "%s %63[^,], %63s", mnemonic, token1, token2)<3){
-        strcpy(binStr,"ERROR");
-        return;
-    }
-    trim(token1);
-    trim(token2);
-
-    int opcode=0, rd=0, rs=0, rt=0, imm=0;
-
-    if(token1[0]=='('){
-        opcode=0x13;
-        char *p1=strchr(token1,'r');
-        if(!p1){ strcpy(binStr,"ERROR"); return; }
-        int rtemp=0;
-        sscanf(p1+1,"%d",&rtemp);
-        rd=rtemp;
-        char *paren2=strstr(token1,")(");
-        if(!paren2){
-            imm=0;
-        } else {
-            char offsetBuf[32];
-            char *startOffset=paren2+2;
-            char *endParen=strrchr(token1,')');
-            if(!endParen||endParen<=startOffset){
-                strcpy(binStr,"ERROR");
-                return;
-            }
-            size_t length=endParen-startOffset;
-            if(length>=sizeof(offsetBuf)){
-                strcpy(binStr,"ERROR");
-                return;
-            }
-            strncpy(offsetBuf, startOffset, length);
-            offsetBuf[length] = '\0';
-            imm=(int)strtol(offsetBuf,NULL,0);
-        }
-        if(token2[0]!='r'){
-            strcpy(binStr,"ERROR");
-            return;
-        }
-        rs=(int)strtol(token2+1,NULL,0);
-    }
-    else {
-        if(token1[0]!='r'){ strcpy(binStr,"ERROR"); return; }
-        rd=(int)strtol(token1+1,NULL,0);
-        if(token2[0]=='('){
-            opcode=0x10;
-            char *p1=strchr(token2,'r');
-            if(!p1){ strcpy(binStr,"ERROR"); return; }
-            int rtemp=0;
-            sscanf(p1+1,"%d",&rtemp);
-            rs=rtemp;
-            char *paren2=strstr(token2,")(");
-            if(!paren2){
-                imm=0;
-            } else {
-                char offsetBuf[32];
-                char *startOffset=paren2+2;
-                char *endParen=strrchr(token2,')');
-                if(!endParen||endParen<=startOffset){
-                    strcpy(binStr,"ERROR");
-                    return;
-                }
-                size_t length=endParen-startOffset;
-                if(length>=sizeof(offsetBuf)){
-                    strcpy(binStr,"ERROR");
-                    return;
-                }
-                strncpy(offsetBuf, startOffset, length);
-                offsetBuf[length]='\0';
-                imm=(int)strtol(offsetBuf,NULL,0);
-            }
-        }
-        else if(token2[0]=='r'){
-            opcode=0x11;
-            rs=(int)strtol(token2+1,NULL,0);
-        }
-        else {
-            if(token2[0]=='-'){
-                fprintf(stderr,"Error: negative immediate not allowed for mov rD, L\n");
-                abortAssembly();
-            }
-            opcode=0x12;
-            imm=(int)strtol(token2,NULL,0);
-        }
-    }
-    unsigned int inst=(opcode<<27)|(rd<<22)|(rs<<17)|(rt<<12)|((imm&0xFFF));
-    char tmp[33];
-    intToBinaryStr(inst,32,tmp);
-    strcpy(binStr,tmp);
-}
-
-void assembleStandard(const char *line, char *binStr) {
-    char mnemonic[16], op1[16], op2[16], op3[16], op4[16];
-    int num=sscanf(line, "%15s %15s %15s %15s %15s",
-                   mnemonic, op1, op2, op3, op4);
-
-    InstructionEntry *e=NULL;
-    HASH_FIND_STR(instMap, mnemonic, e);
-    if(!e){
-        strcpy(binStr,"ERROR");
-        return;
-    }
-    int opcode=e->opcode, rd=0, rs=0, rt=0, imm=0;
-
-    if(!strcmp(e->format,"rd L") && num>=3){
-        if(op2[0]=='-'){
-            fprintf(stderr,"Error: negative immediate not allowed for %s\n",mnemonic);
-            abortAssembly();
-        }
-    }
-
-    if(!strcmp(e->format,"rd rs rt") && num>=4){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
-        rt=(op3[0]=='r')?strtol(op3+1,NULL,0):0;
-    }
-    else if(!strcmp(e->format,"rd L") && num>=3){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        imm=(int)strtol(op2,NULL,0);
-    }
-    else if(!strcmp(e->format,"rd rs") && num>=3){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
-    }
-    else if(!strcmp(e->format,"rd rs rt L") && num>=5){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
-        rt=(op3[0]=='r')?strtol(op3+1,NULL,0):0;
-        imm=(int)strtol(op4,NULL,0);
-    }
-    else if(!strcmp(e->format,"rd") && num>=2){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-    } 
-    else {
-        strcpy(binStr,"ERROR");
-        return;
-    }
-
-    unsigned int inst=(opcode<<27)|(rd<<22)|(rs<<17)|(rt<<12)|((imm&0xFFF));
-    char tmp[33];
-    intToBinaryStr(inst,32,tmp);
-    strcpy(binStr,tmp);
-}
-
-static void assembleReturn(char *binStr)
-{
-    unsigned int inst = (0xd << 27);  // 0xd0000000 in hex
-
-    char tmp[33];
-    intToBinaryStr(inst, 32, tmp);
-    strcpy(binStr, tmp);
-}
-
+// Decide which assembler routine to call
 void assembleInstruction(const char *line, char *binStr) {
     char mnemonic[16] = {0};
     sscanf(line, "%15s", mnemonic);
+
+    // If line starts with "return", call assembleReturn
     if (!strcmp(mnemonic, "return")) {
         assembleReturn(binStr);
         return;
@@ -432,6 +260,7 @@ void assembleInstruction(const char *line, char *binStr) {
         assembleStandard(line, binStr);
     }
 }
+
 
 // ===================================================================
 //                      Macro Expansion
