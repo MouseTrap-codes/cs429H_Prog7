@@ -156,13 +156,18 @@ void pass1(const char *filename) {
         }
         if (line[0] == ':') {
             char label[50];
-            if (sscanf(line + 1, "%49s", label) == 1) {
-                if (section == CODE) {
-                    addLabel(label, pc);
-                } else if (section == DATA) {
-                    addLabel(label, dc);
+            if (line[0] == ':') {
+                char label[50];
+                if (sscanf(line + 1, "%49s", label) == 1) {
+                    if (section == CODE || section == NONE) {
+                        addLabel(label, pc);
+                    } else { // section == DATA
+                        addLabel(label, dc);
+                    }
                 }
+                continue;
             }
+            
             continue;
         }
         if (section == CODE) {
