@@ -637,11 +637,11 @@ void parseMacro(const char *line, FILE *outStream) {
 
 // Header structure as specified in the assignment
 typedef struct {
-    uint32_t file_type;       // Currently, 0
-    uint32_t code_seg_begin;  // Address where code is to be loaded (0x2000)
-    uint32_t code_seg_size;   // Size of the code segment in bytes
-    uint32_t data_seg_begin;  // Address where data is to be loaded (0x10000)
-    uint32_t data_seg_size;   // Size of the data segment in bytes (could be 0)
+    uint64_t file_type;       // Currently, 0
+    uint64_t code_seg_begin;  // Address where code is to be loaded (0x2000)
+    uint64_t code_seg_size;   // Size of the code segment in bytes
+    uint64_t data_seg_begin;  // Address where data is to be loaded (0x10000)
+    uint64_t data_seg_size;   // Size of the data segment in bytes (could be 0)
 } tinker_file_header;
 
 void finalAssemble(const char *infile, const char *outfile) {
