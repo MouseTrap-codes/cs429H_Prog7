@@ -244,23 +244,32 @@ void priv(CPU* cpu, int rd, int rs, int rt, uint64_t L) {
     }
 }
 
-// Data Movement Instructions
+// handling data movement instructions /////////
+/*
+    Reads the value in the memory location pointed to by the value composed of the value in
+    register rs as a base register and the literal value L as an index, and stores it in register rd
+*/
 void handleMovRdRsL(CPU* cpu, uint8_t rd, uint8_t rs, uint8_t rt, int64_t L) {
-    int64_t address = cpu->registers[rs] + L;
-    if ((address + 8) > MEM_SIZE || address < 0) {
-        fprintf(stderr, "Simulation error: memory access out of bounds\n");
+    int64_t address = (int64_t)(cpu->registers[rs] + L);
+
+    // Check for out-of-bounds memory access
+    if ((address + 8) > (512 * 1024) || address < 0) {
+        fprintf(stderr, "Simulation error");
         exit(1);
     }
+
+
     cpu->registers[rd] = *(uint64_t*)(cpu->memory + address);
     cpu->programCounter += 4;
 }
 
+// Reads the value in register rs and stores it in register rd 
 void movRdRs(CPU* cpu, uint8_t rd, uint8_t rs) {
     cpu->registers[rd] = cpu->registers[rs];
     cpu->programCounter += 4;
 }
 
-// mov rd, L: set register rd to the unsigned 12-bit immediate L.
+// Sets bits 52:63 (inclusive) of register rd to the value of L
 void handleMovRdL(CPU* cpu, uint8_t rd, uint16_t L) {
     // Clear bits 52-63 of rd and insert L
     cpu->registers[rd] &= ~(0xFFFULL); // Clear bits 52-63
@@ -273,13 +282,23 @@ void handleMovRdL(CPU* cpu, uint8_t rd, uint16_t L) {
     cpu->programCounter += 4;
 }
 
+/*
+    Reads the value in register rs and stores it in the memory location pointed to by the value
+    composed of the value in register rd . as a base register and the literal L as an index.
+*/
 void handleMovRDLRs(CPU* cpu, uint8_t rd, uint8_t rs, uint64_t L) {
-    int64_t address = cpu->registers[rd] + L;
-    if ((address + 8) > MEM_SIZE || address < 0) {
-        fprintf(stderr, "Simulation error: memory access out of bounds\n");
+    // Calculate the memory address using rd as the base and L as the offset
+    int64_t address = (int64_t)(cpu->registers[rd] + L);
+
+    // Check for out-of-bounds memory access
+    if ((address + 8) > (512 * 1024) || address < 0) {
+        fprintf(stderr, "Simulation error");
         exit(1);
     }
+    // Store the value from register rs into memory at the computed address
     *(uint64_t *)(cpu->memory + address) = cpu->registers[rs];
+
+    // Move to the next instruction
     cpu->programCounter += 4;
 }
 
