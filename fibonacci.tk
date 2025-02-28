@@ -1,46 +1,31 @@
 .code
-  ; Set up constants and ports.
-  mov r14, 0           ; r14 holds 0 (used as the input port and zero constant).
-  mov r15, 1           ; r15 holds the output port (console).
-
-  ; Read the input number into r12 using the privileged input instruction.
-  priv r12, r14, r12, 3
-
-  ; If input (r12) > 2 then branch to Fibonacci computation.
-  ld r16, :FIB_COMPUTE ; Load the address of Fibonacci computation.
-  mov r18, 2           ; Set constant 2.
-  brgt r16, r12, r18   ; If r12 > 2, jump to :FIB_COMPUTE.
-
-  ; If input > 1 then branch to the edge-case handler.
-  ld r17, :EDGE_HANDLE ; Load the address of edge-case handling.
-  mov r19, 1           ; Set constant 1.
-  brgt r17, r12, r19   ; If r12 > 1, jump to :EDGE_HANDLE.
-
-  ; For input 0 or 1, output 0.
-  out r15, r14
-  halt
-
+mov r14, 0
+mov r15, 1
+priv r12, r14, r12, 3
+ld r16, :FIB_COMPUTE
+mov r18, 2
+brgt r16, r12, r18
+ld r17, :EDGE_HANDLE
+mov r19, 1
+brgt r17, r12, r19
+out r15, r14
+halt
 :FIB_COMPUTE
-  ; Initialize Fibonacci values: F(0)=0, F(1)=1.
-  mov r20, 0           ; r20 ← 0 (F(0))
-  mov r21, 1           ; r21 ← 1 (F(1))
-  mov r24, 2           ; r24 holds constant 2.
-  sub r12, r12, r24    ; r12 ← (input - 2): number of iterations.
-  ld r25, :FIB_LOOP    ; Load loop start address into r25.
-
+mov r20, 0
+mov r21, 1
+mov r24, 2
+sub r12, r12, r24
+ld r25, :FIB_LOOP
 :FIB_LOOP
-  ; Compute the next Fibonacci number.
-  add r26, r20, r21    ; r26 ← r20 + r21.
-  mov r20, r21         ; Update: previous ← current.
-  mov r21, r26         ; Update: current ← new Fibonacci number.
-  mov r29, 1           ; r29 holds constant 1.
-  sub r12, r12, r29    ; Decrement the loop counter.
-  brnz r25, r12        ; If r12 ≠ 0, branch back to :FIB_LOOP.
-  out r15, r21         ; Output the computed Fibonacci number.
-  halt
-
+add r26, r20, r21
+mov r20, r21
+mov r21, r26
+mov r29, 1
+sub r12, r12, r29
+brnz r25, r12
+out r15, r21
+halt
 :EDGE_HANDLE
-  ; For the edge case where input equals 2, output 1.
-  mov r30, 1
-  out r15, r30
-  halt
+mov r30, 1
+out r15, r30
+halt
