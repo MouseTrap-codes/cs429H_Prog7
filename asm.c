@@ -406,9 +406,7 @@ void assembleStandard(const char *line, char *binStr) {
 
 static void assembleReturn(char *binStr)
 {
-    // Force the top nibble to be 0xd, i.e. shift by 28 bits (4-bit opcode style).
-    // This contradicts official Tinker doc, but matches the older/hypothetical encoding:
-    unsigned int inst = (0xd << 28);  // 0xd0000000 in hex
+    unsigned int inst = (0xd << 27);  // 0xd0000000 in hex
 
     char tmp[33];
     intToBinaryStr(inst, 32, tmp);
