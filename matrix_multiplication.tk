@@ -18,14 +18,14 @@
 	ld r46, :exitInner
 	ld r47, :exitCol
 	ld r48, :finish
-	:mat1Load
+:mat1Load
 	priv r9, r11, r9, 3
 	mov (r40)(0), r9
 	add r40, r40, r20
 	subi r62, 1
 	brnz r41, r62
 	mov r50, r40
-	:mat2Load
+:mat2Load
 	priv r9, r11, r9, 3
 	mov (r49)(0), r9
 	add r49, r49, r20
@@ -33,12 +33,12 @@
 	brnz r42, r63
 	mov r56, r49
 	mov r30, 0
-	:rowLoop
+:rowLoop
 	mov r31, 0
-	:colLoop
+:colLoop
 	mov r32, 0
 	clr r33
-	:computeInner
+:computeInner
 	mul r34, r30, r60
 	add r34, r34, r32
 	mul r34, r34, r20
@@ -54,15 +54,15 @@
 	addi r32, 1
 	brgt r46, r32, r61
 	br r43
-	:exitInner
+:exitInner
 	ld r70, 1
 	priv r70, r33, r70, 4
 	addi r31, 1
 	brgt r47, r31, r61
 	br r44
-	:exitCol
+:exitCol
 	addi r30, 1
 	brgt r48, r30, r61
 	br r45
-	:finish
+:finish
 	halt
