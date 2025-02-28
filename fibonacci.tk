@@ -1,31 +1,51 @@
 .code
+    ; r14 = 0, r15 = 1
     mov r14, 0
     mov r15, 1
+
+    ; Read from input port "r14" (which is 0) into r12
     priv r12, r14, r12, 3
-    ld r16, :FIBCOMPUTE
+
+    ; Load address of the FIB_COMPUTE routine into r16
+    ld r16, :FIB_COMPUTE
+
+    ; We will compare input (r12) to 2, stored in r18
     mov r18, 2
-    brgt r16, r12, r18
+    brgt r16, r12, r18     ; if r12 > 2, jump to FIB_COMPUTE
+
+    ; Otherwise, load address of EDGE_HANDLE into r17
     ld r17, :EDGE_HANDLE
+
+    ; Compare input (r12) to 1, stored in r19
     mov r19, 1
-    brgt r17, r12, r19
+    brgt r17, r12, r19     ; if r12 > 1, jump to EDGE_HANDLE
+
+    ; If we get here, the input is 0 or 1. Print 0 (r14) and halt.
     priv r15, r14, r14, 4
     halt
-    :FIBCOMPUTE
-    mov r20, 0
-    mov r21, 1
+
+:FIB_COMPUTE
+    ; Fibonacci iteration setup
+    mov r20, 0            ; fib(n-2)
+    mov r21, 1            ; fib(n-1)
     mov r24, 2
-    sub r12, r12, r24
-    ld r25, :FIBLOOP
-    :FIB_LOOP
-    add r26, r20, r21
-    mov r20, r21
+    sub r12, r12, r24     ; r12 = r12 - 2
+
+    ld r25, :FIB_LOOP
+:FIB_LOOP
+    add r26, r20, r21     ; r26 = fib(n-2) + fib(n-1)
+    mov r20, r21          ; shift for next iteration
     mov r21, r26
     mov r29, 1
-    sub r12, r12, r29
-    brnz r25, r12
+    sub r12, r12, r29     ; decrement our loop count
+    brnz r25, r12         ; keep looping if r12 != 0
+
+    ; Finished. Output fib(n) = r21 to port 1 (r15).
     priv r15, r21, r14, 4
     halt
-    :EDGEHANDLE
+
+:EDGE_HANDLE
+    ; Here if n == 2. Output 1 and halt.
     mov r30, 1
     priv r15, r30, r14, 4
     halt
