@@ -1,68 +1,67 @@
 .code
-	ld r40, 65536
-	ld r49, 65536
-	mov r11, 0
-	mov r20, 8
-	priv r8, r11, r8, 3
-	mov r60, r8
-	mov r61, r8
-	subi r61, 1
-	mul r24, r8, r8
-	mov r62, r24
-	mov r63, r24
-	ld r41, :mat1Load
-	ld r42, :mat2Load
-	ld r43, :computeInner
-	ld r44, :colLoop
-	ld r45, :rowLoop
-	ld r46, :exitInner
-	ld r47, :exitCol
-	ld r48, :finish
-:mat1Load
-	priv r9, r11, r9, 3
-	mov (r40)(0), r9
-	add r40, r40, r20
-	subi r62, 1
-	brnz r41, r62
-	mov r50, r40
-:mat2Load
-	priv r9, r11, r9, 3
-	mov (r49)(0), r9
-	add r49, r49, r20
-	subi r63, 1
-	brnz r42, r63
-	mov r56, r49
-	mov r30, 0
-:rowLoop
-	mov r31, 0
-:colLoop
-	mov r32, 0
-	clr r33
-:computeInner
-	mul r34, r30, r60
-	add r34, r34, r32
-	mul r34, r34, r20
-	add r34, r34, r50
-	mul r36, r32, r60
-	add r36, r36, r31
-	mul r36, r36, r20
-	add r36, r36, r56
-	mov r35, (r34)(0)
-	mov r37, (r36)(0)
-	mulf r38, r35, r37
-	addf r33, r33, r38
-	addi r32, 1
-	brgt r46, r32, r61
-	br r43
+	ld r4, 65536
+	ld r5, 65536
+	mov r0, 0
+	mov r1, 8
+	priv r6, r0, r6, 3
+	mov r8, r6
+	mul r8, r6, r6
+	mov r9, r8
+	mov r7, r6
+	subi r7, 1
+	ld r10, :loadA
+	ld r11, :loadB
+	ld r12, :innerLoop
+	ld r13, :middleLoop
+	ld r14, :outerLoop
+	ld r15, :exitInner
+	ld r16, :exitMiddle
+	ld r17, :finish
+:loadA
+	priv r2, r0, r2, 3
+	mov (r4)(0), r2
+	add r4, r4, r1
+	subi r8, 1
+	brnz r10, r8
+	mov r20, r4
+:loadB
+	priv r2, r0, r2, 3
+	mov (r5)(0), r2
+	add r5, r5, r1
+	subi r9, 1
+	brnz r11, r9
+	mov r21, r5
+	mov r22, 0
+:outerLoop
+	mov r23, 0
+:middleLoop
+	clr r30
+	mov r24, 0
+:innerLoop
+	mul r25, r22, r6
+	add r25, r25, r24
+	mul r25, r25, r1
+	add r25, r25, r20
+	mul r26, r24, r6
+	add r26, r26, r23
+	mul r26, r26, r1
+	add r26, r26, r21
+	mov r27, (r25)(0)
+	mov r28, (r26)(0)
+	mulf r29, r27, r28
+	addf r30, r30, r29
+	addi r24, 1
+	brgt r15, r24, r7
+	br r12
 :exitInner
-	ld r70, 1
-	priv r70, r33, r70, 4
-	addi r31, 1
-	brgt r47, r31, r61
-	br r44
-:exitCol
-	addi r30, 1
-	brgt r48, r30, r61
-	br r45
+	ld r3, 1
+	priv r3, r30, r3, 4
+	addi r23, 1
+	brgt r16, r23, r7
+	br r13
+:exitMiddle
+	addi r22, 1
+	brgt r17, r22, r7
+	br r14
 :finish
 	halt
