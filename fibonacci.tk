@@ -1,63 +1,33 @@
 .code
-    ;------------------------------------------------------
-    ; Setup: Define constants and I/O ports.
-    ; r1 will hold 0, r2 will hold 1.
-    ; r10 is set to 1 to designate the output port.
-    mov   r1, 0       ; constant 0
-    mov   r2, 1       ; constant 1
-    mov   r10, 1      ; output port = 1
-
-    ;------------------------------------------------------
-    ; Read input: number of Fibonacci numbers to output.
-    ; The input is read from port 0 (using r1 = 0 as the port address)
+    mov   r1, 0
+    mov   r2, 1
+    mov   r10, 1
     priv  r0, r1, r0, 3   ; r0 ← Input[r1]  (r0 now holds n)
 
-    ; Check: If n <= 0, halt.
-    ld    r3, :continue   ; r3 ← address of label continue
-    brgt  r3, r0, r1      ; if r0 > 0 then branch to continue; else continue to next instruction
+    ld    r3, :continue  
+    brgt  r3, r0, r1
     halt
-
-:continue
-    ;------------------------------------------------------
-    ; Output the first Fibonacci number: 0.
+    :continue
     out   r10, r1         ; output 0
-    ; Decrement count: n = n - 1.
     sub   r0, r0, r2      ; subtract 1 from r0
-
-    ; If no more numbers are required, halt.
     ld    r4, :output_one ; r4 ← address of label output_one
     brnz  r4, r0         ; if r0 ≠ 0, branch to output_one; else fall through and halt
     halt
-
-:output_one
-    ;------------------------------------------------------
-    ; Output the second Fibonacci number: 1.
+    :output_one
     out   r10, r2         ; output 1
-    ; Decrement count: n = n - 1.
     sub   r0, r0, r2
-    ; If more numbers are needed, jump into the Fibonacci loop.
     ld    r5, :fib_loop   ; r5 ← address of label fib_loop
     brnz  r5, r0         ; if r0 ≠ 0, branch to fib_loop; else halt
     halt
-
-:fib_loop
-    ;------------------------------------------------------
-    ; Initialize registers for iterative Fibonacci computation:
-    ; r6 will hold f_prev and r7 will hold f_curr.
+    :fib_loop
     mov   r6, r1         ; f_prev = 0
     mov   r7, r2         ; f_curr = 1
-
-:loop
-    ; Compute next Fibonacci number: r8 = f_prev + f_curr.
+    :loop
     add   r8, r6, r7
-    ; Output the computed Fibonacci number.
     out   r10, r8
-    ; Decrement count: n = n - 1.
     sub   r0, r0, r2
-    ; Update for next iteration: f_prev ← f_curr, f_curr ← r8.
     mov   r6, r7
     mov   r7, r8
-    ; If more numbers are needed, repeat the loop.
-    ld    r9, :loop      ; r9 ← address of label loop
-    brnz  r9, r0         ; if r0 ≠ 0, branch to loop; else halt
+    ld    r9, :loop     
+    brnz  r9, r0         
     halt
