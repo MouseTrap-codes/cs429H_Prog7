@@ -816,6 +816,22 @@ void finalAssemble(const char *infile, const char *outfile) {
                 }
                 codeBuffer[codeCount++] = w;
             }
+            else if (!strcmp(token, "return")) {
+                // Explicitly handle the "return" instruction using your dedicated function.
+                assembleReturn(assembled);
+                uint32_t w = binStrToUint32(assembled);
+                if (codeCount >= codeCapacity) {
+                    codeCapacity *= 2;
+                    codeBuffer = realloc(codeBuffer, codeCapacity * sizeof(uint32_t));
+                    if (!codeBuffer) {
+                        perror("realloc codeBuffer");
+                        fclose(fin);
+                        free(dataBuffer);
+                        exit(1);
+                    }
+                }
+                codeBuffer[codeCount++] = w;
+            }
             else {
                 assembleStandard(line, assembled);
                 if(strcmp(assembled,"ERROR")==0){
