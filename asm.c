@@ -351,82 +351,77 @@ void assembleMov(const char *line, char *binStr) {
     strcpy(binStr,tmp);
 }
 
+// Assemble standard instructions using the instMap
 void assembleStandard(const char *line, char *binStr) {
     char mnemonic[16], op1[16], op2[16], op3[16], op4[16];
-    int num=sscanf(line, "%15s %15s %15s %15s %15s",
-                   mnemonic, op1, op2, op3, op4);
+    int num = sscanf(line, "%15s %15s %15s %15s %15s", mnemonic, op1, op2, op3, op4);
 
-    InstructionEntry *e=NULL;
+    InstructionEntry *e = NULL;
     HASH_FIND_STR(instMap, mnemonic, e);
-    if(!e){
-        strcpy(binStr,"ERROR");
+    if (!e) {
+        strcpy(binStr, "ERROR");
         return;
     }
-    int opcode=e->opcode, rd=0, rs=0, rt=0, imm=0;
+    int opcode = e->opcode, rd = 0, rs = 0, rt = 0, imm = 0;
 
-    if(!strcmp(e->format,"rd L") && num>=3){
-        if(op2[0]=='-'){
-            fprintf(stderr,"Error: negative immediate not allowed for %s\n",mnemonic);
-            abortAssembly();
+    // For instructions with unsigned immediates, check for a leading '-'
+    if ((strcmp(e->format, "rd L") == 0) && num >= 3) {
+        if (op2[0] == '-') {
+            fprintf(stderr, "Error: negative immediate not allowed for instruction %s\n", mnemonic);
+            exit(1);
         }
     }
 
-    if(!strcmp(e->format,"rd rs rt") && num>=4){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
-        rt=(op3[0]=='r')?strtol(op3+1,NULL,0):0;
+    if (strcmp(e->format, "rd rs rt") == 0 && num >= 4) {
+        rd = (op1[0] == 'r') ? (int)strtol(op1 + 1, NULL, 0) : 0;
+        rs = (op2[0] == 'r') ? (int)strtol(op2 + 1, NULL, 0) : 0;
+        rt = (op3[0] == 'r') ? (int)strtol(op3 + 1, NULL, 0) : 0;
     }
-    else if(!strcmp(e->format,"rd L") && num>=3){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        imm=(int)strtol(op2,NULL,0);
+    else if (strcmp(e->format, "rd L") == 0 && num >= 3) {
+        rd = (op1[0] == 'r') ? (int)strtol(op1 + 1, NULL, 0) : 0;
+        imm = (int)strtol(op2, NULL, 0);
     }
-    else if(!strcmp(e->format,"rd rs") && num>=3){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
+    else if (strcmp(e->format, "rd rs") == 0 && num >= 3) {
+        rd = (op1[0] == 'r') ? (int)strtol(op1 + 1, NULL, 0) : 0;
+        rs = (op2[0] == 'r') ? (int)strtol(op2 + 1, NULL, 0) : 0;
     }
-    else if(!strcmp(e->format,"rd rs rt L") && num>=5){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-        rs=(op2[0]=='r')?strtol(op2+1,NULL,0):0;
-        rt=(op3[0]=='r')?strtol(op3+1,NULL,0):0;
-        imm=(int)strtol(op4,NULL,0);
+    else if (strcmp(e->format, "rd rs rt L") == 0 && num >= 5) {
+        rd = (op1[0] == 'r') ? (int)strtol(op1 + 1, NULL, 0) : 0;
+        rs = (op2[0] == 'r') ? (int)strtol(op2 + 1, NULL, 0) : 0;
+        rt = (op3[0] == 'r') ? (int)strtol(op3 + 1, NULL, 0) : 0;
+        imm = (int)strtol(op4, NULL, 0);
     }
-    else if(!strcmp(e->format,"rd") && num>=2){
-        rd=(op1[0]=='r')?strtol(op1+1,NULL,0):0;
-    } 
+    else if (strcmp(e->format, "rd") == 0 && num >= 2) {
+        rd = (op1[0] == 'r') ? (int)strtol(op1 + 1, NULL, 0) : 0;
+    }
+    else if (strcmp(e->format, "") == 0) {
+        // e.g., "return" (no operands)
+    }
     else {
-        strcpy(binStr,"ERROR");
+        strcpy(binStr, "ERROR");
         return;
     }
 
-    unsigned int inst=(opcode<<27)|(rd<<22)|(rs<<17)|(rt<<12)|((imm&0xFFF));
-    char tmp[33];
-    intToBinaryStr(inst,32,tmp);
-    strcpy(binStr,tmp);
+    unsigned int inst = (opcode << 27) | (rd << 22) | (rs << 17) | (rt << 12) | (imm & 0xFFF);
+    intToBinaryStr(inst, 32, binStr);
 }
 
-static void assembleReturn(char *binStr)
-{
-    unsigned int inst = (0xd << 27);  // 0xd0000000 in hex
 
-    char tmp[33];
-    intToBinaryStr(inst, 32, tmp);
-    strcpy(binStr, tmp);
-}
-
+// If mnemonic is "mov" or "brr", use custom routines; otherwise, standard.
 void assembleInstruction(const char *line, char *binStr) {
-    char mnemonic[16] = {0};
+    char mnemonic[16];
     sscanf(line, "%15s", mnemonic);
-    if (!strcmp(mnemonic, "return")) {
-        assembleReturn(binStr);
-        return;
-    }
-    if(!strcmp(mnemonic,"mov")){
+
+    if (strcmp(mnemonic, "mov") == 0) {
         assembleMov(line, binStr);
     }
-    else if(!strcmp(mnemonic,"brr")){
-        const char *p=line+3;
-        while(isspace((unsigned char)*p)) p++;
-        assembleBrrOperand(p, binStr);
+    else if (strcmp(mnemonic, "brr") == 0) {
+        char dummy[16], operand[64];
+        if (sscanf(line, "%15s %63s", dummy, operand) < 2) {
+            strcpy(binStr, "ERROR");
+            return;
+        }
+        assembleBrr(operand, binStr);
     }
     else {
         assembleStandard(line, binStr);
